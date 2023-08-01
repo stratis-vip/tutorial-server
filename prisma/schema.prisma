@@ -1,0 +1,112 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model players {
+  id         Int          @id
+  name       String       @db.VarChar(50)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  guild      guilds       @relation(fields: [guildId], references: [id])
+  guildId    Int
+  teams      teams[]
+  PlayerLogs PlayerLogs[]
+
+  @@map("players")
+}
+
+model guilds {
+  id        Int        @id
+  name      String     @db.VarChar(50)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  league    LeagueType
+
+  players   players[]
+  guildLogs GuildLogs[]
+  teams     teams[]
+
+  @@map("guilds")
+}
+
+model teams {
+  id         String    @id @default(cuid())
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  player     players   @relation(fields: [playerId], references: [id])
+  teamType   TeamType  @default(HEROES)
+  pet        Pet?      @relation(fields: [petId], references: [smallName])
+  guildId    Int
+  guilds     guilds    @relation(fields: [guildId], references: [id])
+  lineup     String
+  power      Int
+  pets       String?
+  petId      String?
+  playerId   Int
+  date       DateTime
+  attBattles Battles[] @relation("attacker")
+  defBattles Battles[] @relation("defender")
+}
+
+model Pet {
+  smallName String  @id @db.VarChar(3)
+  name      String  @db.VarChar(10)
+  teams     teams[]
+}
+
+model GuildLogs {
+  id      String       @id @default(cuid())
+  guildId Int
+  guilds  guilds       @relation(fields: [guildId], references: [id])
+  change  GuildChanges
+  date    DateTime     @default(now())
+  log     String
+}
+
+model PlayerLogs {
+  id       String        @id @default(cuid())
+  playerId Int
+  players  players       @relation(fields: [playerId], references: [id])
+  change   playerChanges
+  log      String
+}
+
+model Battles {
+  id        String   @id @default(cuid())
+  date      DateTime
+  points    Int
+  attacker  teams    @relation("attacker", fields: [attTeamId], references: [id])
+  defender  teams    @relation("defender", fields: [defTeamId], references: [id])
+  attTeamId String
+  defTeamId String
+}
+
+enum TeamType {
+  HEROES
+  TITANS
+}
+
+enum LeagueType {
+  GOLD
+  SILVER
+  BRONZE
+  QUALIFYING
+}
+
+enum GuildChanges {
+  NAME
+  PROMOTION
+}
+
+enum playerChanges {
+  NAME
+  GUILD
+}
